@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: training-
+spec:
+  entrypoint: volumes-existing-example
+  volumes:
+  # Pass my-existing-volume as an argument to the volumes-existing-example template
+  # Same syntax as k8s Pod spec
+  - name: task-pv-volume
+    persistentVolumeClaim:
+      claimName: task-pv-claim
+
+  templates:
+  - name: volumes-existing-example
+    steps:
+    - - name: generate
+        template: iris-train
+    
+
+  - name: iris-train
+    container:
+      image: pachyderm/iris-train:python-svm
+      command: ["python3", "/code/pytrain.py", "/mnt/data/training/", "/mnt/data/out/"]
+      #args: ["echo generating message in volume; cowsay hello world | tee /mnt/data/hello_world.txt"]
+      volumeMounts:
+      - name: task-pv-volume
+        mountPath: /mnt/data
+
+  
